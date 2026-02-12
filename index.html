@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Awaa Webhook Sender</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #0d1117; color: #58a6ff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; display: flex; justify-content: center; }
         .container { max-width: 500px; width: 100%; background: #161b22; padding: 25px; border-radius: 8px; border: 1px solid #30363d; }
@@ -19,26 +20,107 @@
             color: #ffffff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; margin-top: 10px;
         }
         button:hover { background: #2ea043; }
-        .status { margin-top: 15px; font-size: 0.9em; text-align: center; font-weight: bold; }
+        .status { margin-top: 15px; font-size: 0.9em; text-align: center; font-weight: bold; min-height: 1.2em; }
+
+        .btn-discord {
+            background-color: #5865F2; display: flex; align-items: center; justify-content: center;
+            gap: 10px; text-decoration: none; color: white; font-size: 14px; margin-top: 10px;
+            border-radius: 6px; padding: 12px; font-weight: bold;
+        }
+        .btn-discord:hover { background-color: #4752c4; }
+        
+        .preview-box {
+            margin-top: 20px; padding: 15px; background: #313338; border-radius: 5px;
+            display: none; font-family: 'gg sans', sans-serif;
+        }
+        .discord-msg { display: flex; align-items: flex-start; }
+        .discord-avatar {
+            width: 40px; height: 40px; border-radius: 50%; margin-right: 15px;
+            background-color: #5865F2; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px;
+        }
+        .discord-content { flex: 1; }
+        .discord-header { display: flex; align-items: center; margin-bottom: 2px; }
+        .discord-name { color: #ffffff; font-weight: 500; margin-right: 5px; font-size: 1rem; }
+        .bot-tag {
+            background: #5865F2; color: white; font-size: 0.625rem; padding: 1px 4px;
+            border-radius: 3px; font-weight: bold; display: flex; align-items: center; height: 14px;
+        }
+        .discord-text { color: #dbdee1; font-size: 1rem; line-height: 1.375rem; word-wrap: break-word; white-space: pre-wrap; }
+        .discord-text b { color: #ffffff; }
+        .discord-text i { font-style: italic; }
+        .discord-text code { background: #1e1f22; padding: 0.2rem; border-radius: 3px; font-family: monospace; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Awaaa Webhook</h2>
         <input type="text" id="url" placeholder="Masukkan URL Webhook">
-        <textarea id="message" rows="8" placeholder="Tulis pesan kamu di sini..."></textarea>
+        <textarea id="message" rows="8" placeholder="Tulis pesan kamu di sini..." oninput="clearPreview()"></textarea>
+        
         <button onclick="sendWebhook()">KIRIM SEKARANG</button>
+        <button type="button" onclick="showPreview()" style="background: #4e5058;">TAMPILKAN PREVIEW</button>
+
+        <a href="https://support.discord.com/hc/en-us/articles/210298617-Markdown-Text-101-Chat-Formatting-Bold-Italic-Underline" target="_blank" class="btn-discord">
+            <i class="fab fa-discord"></i> DISCORD TRICKS
+        </a>
+
         <div id="status" class="status"></div>
+
+        <div id="previewContainer" class="preview-box">
+            <div class="discord-msg">
+                <div class="discord-avatar"><i class="fab fa-discord"></i></div>
+                <div class="discord-content">
+                    <div class="discord-header">
+                        <span class="discord-name">WastBot</span>
+                        <span class="bot-tag"><i class="fas fa-check" style="font-size: 7px; margin-right: 2px;"></i> APP</span>
+                    </div>
+                    <div id="previewText" class="discord-text"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
+        function parseMarkdown(text) {
+            return text
+                .replace(/\*\*\*(.*?)\*\*\*/g, '<b><i>$1</i></b>')
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                .replace(/\*(.*?)\*/g, '<i>$1</i>')
+                .replace(/__(.*?)__/g, '<u>$1</u>')
+                .replace(/~~(.*?)~~/g, '<strike>$1</strike>')
+                .replace(/`(.*?)`/g, '<code>$1</code>');
+        }
+
+        function showPreview() {
+            const msg = document.getElementById('message').value;
+            if(msg.trim() !== "") {
+                document.getElementById('previewText').innerHTML = parseMarkdown(msg);
+                document.getElementById('previewContainer').style.display = "block";
+            }
+        }
+
+        function clearPreview() {
+            document.getElementById('previewContainer').style.display = "none";
+            document.getElementById('status').innerText = ""; 
+        }
+
         async function sendWebhook() {
-            const url = document.getElementById('url').value;
-            const message = document.getElementById('message').value;
+            const urlInput = document.getElementById('url').value.trim();
+            const messageInput = document.getElementById('message').value.trim();
             const statusDiv = document.getElementById('status');
 
-            if (!url || !message) {
+            // 1. Cek Kekosongan
+            if (!urlInput || !messageInput) {
                 statusDiv.innerText = "❌ Isi URL dan Pesan dulu ya!";
+                statusDiv.style.color = "#f85149";
+                return;
+            }
+
+            // 2. Validasi Format URL Discord
+            const discordPattern = /^https:\/\/(canary\.|ptb\.)?discord\.com\/api\/webhooks\/\d+\/[\w-]+$/;
+            if (!discordPattern.test(urlInput)) {
+                statusDiv.innerText = "❌ URL Webhook Tidak Valid!";
                 statusDiv.style.color = "#f85149";
                 return;
             }
@@ -47,23 +129,24 @@
             statusDiv.style.color = "#c9d1d9";
             
             try {
-                // Mengirim langsung ke Webhook tanpa backend
-                const response = await fetch(url, {
+                const response = await fetch(urlInput, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: message }) // 'content' adalah format standar Discord
+                    body: JSON.stringify({ content: messageInput })
                 });
 
                 if (response.ok) {
                     statusDiv.innerText = "✅ Pesan Berhasil Dikirim!";
                     statusDiv.style.color = "#3fb950";
-                    document.getElementById('message').value = ""; // Reset pesan
+                    document.getElementById('message').value = ""; 
+                    clearPreview();
                 } else {
-                    statusDiv.innerText = "❌ Gagal" + response.statusText;
+                    // Jika URL formatnya benar tapi ID salah/dihapus
+                    statusDiv.innerText = "❌ Gagal: Webhook Tidak Ditemukan!";
                     statusDiv.style.color = "#f85149";
                 }
             } catch (err) {
-                statusDiv.innerText = "❌ Error: Pastikan URL benar atau cek koneksi.";
+                statusDiv.innerText = "❌ Error: Masalah Koneksi!";
                 statusDiv.style.color = "#f85149";
             }
         }
