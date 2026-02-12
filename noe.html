@@ -3,28 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Awaa Webhook</title>
+    <title>Awaa Webhook Sender</title>
     <style>
-        body { background-color: #000; color: #ff8c00; font-family: sans-serif; padding: 20px; }
+        body { background-color: #0d1117; color: #58a6ff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; display: flex; justify-content: center; }
+        .container { max-width: 500px; width: 100%; background: #161b22; padding: 25px; border-radius: 8px; border: 1px solid #30363d; }
+        h2 { color: #f0f6fc; text-align: center; margin-bottom: 20px; }
         input, textarea { 
-            width: 100%; padding: 10px; margin: 10px 0; 
-            background: #1a1a1a; border: 1px solid #ff8c00; 
-            color: #ff8c00; border-radius: 4px; 
+            width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box;
+            background: #0d1117; border: 1px solid #30363d; 
+            color: #c9d1d9; border-radius: 6px; outline: none;
         }
+        input:focus { border-color: #58a6ff; }
         button { 
-            width: 100%; padding: 12px; background: #ff8c00; 
-            color: #000; border: none; font-weight: bold; cursor: pointer; 
+            width: 100%; padding: 12px; background: #238636; 
+            color: #ffffff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; margin-top: 10px;
         }
-        button:active { background: #e67e00; }
-        .status { margin-top: 15px; font-size: 0.9em; }
+        button:hover { background: #2ea043; }
+        .status { margin-top: 15px; font-size: 0.9em; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>Awaaa Webhook</h2>
-    <input type="text" id="url" placeholder="URL Webhook (https://...)">
-    <textarea id="message" rows="15" placeholder="Pesan yang ingin dikirim..."></textarea>
-    <button onclick="sendWebhook()">KIRIM PESAN</button>
-    <div id="status" class="status"></div>
+    <div class="container">
+        <h2>Awaaa Webhook</h2>
+        <input type="text" id="url" placeholder="Masukkan URL Webhook (Discord/Slack)">
+        <textarea id="message" rows="8" placeholder="Tulis pesan kamu di sini..."></textarea>
+        <button onclick="sendWebhook()">KIRIM SEKARANG</button>
+        <div id="status" class="status"></div>
+    </div>
 
     <script>
         async function sendWebhook() {
@@ -32,18 +37,34 @@
             const message = document.getElementById('message').value;
             const statusDiv = document.getElementById('status');
 
-            statusDiv.innerText = "Mengirim...";
+            if (!url || !message) {
+                statusDiv.innerText = "❌ Isi URL dan Pesan dulu ya!";
+                statusDiv.style.color = "#f85149";
+                return;
+            }
+
+            statusDiv.innerText = "⏳ Sedang mengirim...";
+            statusDiv.style.color = "#c9d1d9";
             
             try {
-                const response = await fetch('/send', {
+                // Mengirim langsung ke Webhook tanpa backend
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, message })
+                    body: JSON.stringify({ content: message }) // 'content' adalah format standar Discord
                 });
-                const result = await response.json();
-                statusDiv.innerText = result.success ? "Berhasil dikirim!" : "Gagal: " + result.error;
+
+                if (response.ok) {
+                    statusDiv.innerText = "✅ Pesan Berhasil Dikirim!";
+                    statusDiv.style.color = "#3fb950";
+                    document.getElementById('message').value = ""; // Reset pesan
+                } else {
+                    statusDiv.innerText = "❌ Gagal: " + response.statusText;
+                    statusDiv.style.color = "#f85149";
+                }
             } catch (err) {
-                statusDiv.innerText = "Error: " + err.message;
+                statusDiv.innerText = "❌ Error: Pastikan URL benar atau cek koneksi.";
+                statusDiv.style.color = "#f85149";
             }
         }
     </script>
