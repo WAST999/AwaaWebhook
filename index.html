@@ -6,9 +6,48 @@
     <title>Awaa Webhook Sender</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0d1117; color: #58a6ff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; display: flex; justify-content: center; }
-        .container { max-width: 500px; width: 100%; background: #161b22; padding: 25px; border-radius: 8px; border: 1px solid #30363d; }
-        h2 { color: #f0f6fc; text-align: center; margin-bottom: 20px; }
+        /* --- MENU AWAL --- */
+        body { 
+            background-color: #0d1117; 
+            color: #58a6ff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; /* Agar tidak terlalu ke bawah */
+            position: relative; /* Dasar untuk posisi logo luar */
+        }
+
+        /* LOGO DI KIRI ATAS LUAR BORDER */
+        .logo-luar {
+            position: absolute;
+            top: 75px;
+            left: 25px;
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        .container { 
+            max-width: 500px; 
+            width: 100%; 
+            background: #161b22; 
+            padding: 25px; 
+            border-radius: 8px; 
+            border: 1px solid #30363d; 
+            margin-top: 50px; /* Jarak agar tidak mentok atas */
+        }
+        
+        /* JUDUL TEPAT DI TENGAH */
+        h2 { 
+            color: #f0f6fc; 
+            text-align: center; 
+            margin: 0 0 20px 0; 
+            width: 100%;
+        }
+
         input, textarea { 
             width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box;
             background: #0d1117; border: 1px solid #30363d; 
@@ -27,17 +66,17 @@
             gap: 10px; text-decoration: none; color: white; font-size: 14px; margin-top: 10px;
             border-radius: 6px; padding: 12px; font-weight: bold;
         }
-        .btn-discord:hover { background-color: #4752c4; }
-        
+
+        /* --- PREVIEW --- */
         .preview-box {
             margin-top: 20px; padding: 15px; background: #313338; border-radius: 5px;
             display: none; font-family: 'gg sans', sans-serif;
         }
-        .discord-msg { display: flex; align-items: flex-start; }
+        .discord-msg { display: flex; align-items: flex-start; text-align: left; }
         .discord-avatar {
             width: 40px; height: 40px; border-radius: 50%; margin-right: 15px;
             background-color: #5865F2; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 20px;
+            color: white; font-size: 20px; flex-shrink: 0;
         }
         .discord-content { flex: 1; }
         .discord-header { display: flex; align-items: center; margin-bottom: 2px; }
@@ -46,15 +85,25 @@
             background: #5865F2; color: white; font-size: 0.625rem; padding: 1px 4px;
             border-radius: 3px; font-weight: bold; display: flex; align-items: center; height: 14px;
         }
-        .discord-text { color: #dbdee1; font-size: 1rem; line-height: 1.375rem; word-wrap: break-word; white-space: pre-wrap; }
+
+        .discord-text { color: #dbdee1; font-size: 1rem; line-height: 1.375rem; word-wrap: break-word; text-align: left; }
+        .discord-text h1, .discord-text h2, .discord-text h3 { text-align: left !important; color: #ffffff; margin: 16px 0 8px 0; font-weight: bold; }
         .discord-text b { color: #ffffff; }
         .discord-text i { font-style: italic; }
         .discord-text code { background: #1e1f22; padding: 0.2rem; border-radius: 3px; font-family: monospace; }
+        .discord-text blockquote { border-left: 4px solid #4e5058; padding-left: 12px; margin: 8px 0; color: #b5bac1; }
+        .discord-text pre { background: #2b2d31; padding: 10px; border-radius: 4px; overflow-x: auto; margin: 10px 0; border: 1px solid #1e1f22; }
+        .discord-text .spoiler { background: #1e1f22; color: #1e1f22; padding: 0 4px; border-radius: 3px; cursor: pointer; }
+        .discord-text .spoiler.open { background: #44474a; color: #dbdee1; }
     </style>
 </head>
 <body>
+
+    <img src="str.jpg"alt="Logo" class="logo-luar">
+
     <div class="container">
-        <h2>Awaaa Webhook</h2>
+        <h2>WAST WEBHOOK</h2>
+
         <input type="text" id="url" placeholder="Masukkan URL Webhook">
         <textarea id="message" rows="8" placeholder="Tulis pesan kamu di sini..." oninput="clearPreview()"></textarea>
         
@@ -84,12 +133,20 @@
     <script>
         function parseMarkdown(text) {
             return text
+                .replace(/```(?:[a-z0-9]+)?\n([\s\S]+?)\n```/g, '<pre><code>$1</code></pre>')
+                .replace(/^>>> ([\s\S]*$)/m, '<blockquote>$1</blockquote>')
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/\|\|(.*?)\|\|/g, '<span class="spoiler" onclick="this.classList.toggle(\'open\')">$1</span>')
+                .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
                 .replace(/\*\*\*(.*?)\*\*\*/g, '<b><i>$1</i></b>')
                 .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
                 .replace(/\*(.*?)\*/g, '<i>$1</i>')
                 .replace(/__(.*?)__/g, '<u>$1</u>')
                 .replace(/~~(.*?)~~/g, '<strike>$1</strike>')
-                .replace(/`(.*?)`/g, '<code>$1</code>');
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/\n/g, '<br>');
         }
 
         function showPreview() {
@@ -102,7 +159,6 @@
 
         function clearPreview() {
             document.getElementById('previewContainer').style.display = "none";
-            document.getElementById('status').innerText = ""; 
         }
 
         async function sendWebhook() {
@@ -110,17 +166,8 @@
             const messageInput = document.getElementById('message').value.trim();
             const statusDiv = document.getElementById('status');
 
-            // 1. Cek Kekosongan
             if (!urlInput || !messageInput) {
                 statusDiv.innerText = "❌ Isi URL dan Pesan dulu ya!";
-                statusDiv.style.color = "#f85149";
-                return;
-            }
-
-            // 2. Validasi Format URL Discord
-            const discordPattern = /^https:\/\/(canary\.|ptb\.)?discord\.com\/api\/webhooks\/\d+\/[\w-]+$/;
-            if (!discordPattern.test(urlInput)) {
-                statusDiv.innerText = "❌ URL Webhook Tidak Valid!";
                 statusDiv.style.color = "#f85149";
                 return;
             }
@@ -141,8 +188,7 @@
                     document.getElementById('message').value = ""; 
                     clearPreview();
                 } else {
-                    // Jika URL formatnya benar tapi ID salah/dihapus
-                    statusDiv.innerText = "❌ Gagal: Webhook Tidak Ditemukan!";
+                    statusDiv.innerText = "❌ Gagal: Webhook Tidak Valid!";
                     statusDiv.style.color = "#f85149";
                 }
             } catch (err) {
