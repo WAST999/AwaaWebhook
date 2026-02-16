@@ -6,7 +6,7 @@
     <title>Awaa Webhook Sender</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* --- MENU AWAL --- */
+        /* --- MENU AWAL (Tetap Sama) --- */
         body { 
             background-color: #0d1117; 
             color: #58a6ff; 
@@ -14,11 +14,10 @@
             padding: 20px; 
             display: flex; 
             justify-content: center; 
-            align-items: flex-start; /* Agar tidak terlalu ke bawah */
-            position: relative; /* Dasar untuk posisi logo luar */
+            align-items: flex-start;
+            position: relative;
         }
 
-        /* LOGO DI KIRI ATAS LUAR BORDER */
         .logo-luar {
             position: absolute;
             top: 75px;
@@ -37,10 +36,9 @@
             padding: 25px; 
             border-radius: 8px; 
             border: 1px solid #30363d; 
-            margin-top: 50px; /* Jarak agar tidak mentok atas */
+            margin-top: 50px;
         }
         
-        /* JUDUL TEPAT DI TENGAH */
         h2 { 
             color: #f0f6fc; 
             text-align: center; 
@@ -54,6 +52,35 @@
             color: #c9d1d9; border-radius: 6px; outline: none;
         }
         input:focus { border-color: #58a6ff; }
+
+        /* --- FITUR EMBED MINIMALIS --- */
+        .embed-options {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 5px 0 15px 0;
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+        .embed-options label {
+            font-size: 0.85em;
+            color: #c9d1d9;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #embedColor {
+            width: 40px;
+            height: 25px;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
         button { 
             width: 100%; padding: 12px; background: #238636; 
             color: #ffffff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; margin-top: 10px;
@@ -86,6 +113,15 @@
             border-radius: 3px; font-weight: bold; display: flex; align-items: center; height: 14px;
         }
 
+        /* EMBED BOX PREVIEW */
+        .discord-embed-wrapper {
+            margin-top: 8px;
+            padding: 12px;
+            background: #2b2d31;
+            border-left: 4px solid #5865F2;
+            border-radius: 4px;
+        }
+
         .discord-text { color: #dbdee1; font-size: 1rem; line-height: 1.375rem; word-wrap: break-word; text-align: left; }
         .discord-text h1, .discord-text h2, .discord-text h3 { text-align: left !important; color: #ffffff; margin: 16px 0 8px 0; font-weight: bold; }
         .discord-text b { color: #ffffff; }
@@ -99,12 +135,18 @@
 </head>
 <body>
 
-    <img src="str.jpg"alt="Logo" class="logo-luar">
+    <img src="str.jpg" alt="Logo" class="logo-luar">
 
     <div class="container">
         <h2>WEST WEBHOOK</h2>
 
         <input type="text" id="url" placeholder="Masukkan URL Webhook">
+        
+        <div class="embed-options">
+            <label><input type="checkbox" id="enableEmbed" onchange="clearPreview()"> Mode Embed</label>
+            <label>Warna: <input type="color" id="embedColor" value="#5865F2" onchange="clearPreview()"></label>
+        </div>
+
         <textarea id="message" rows="8" placeholder="Tulis pesan kamu di sini..." oninput="clearPreview()"></textarea>
         
         <button onclick="sendWebhook()">KIRIM SEKARANG</button>
@@ -124,7 +166,9 @@
                         <span class="discord-name">WastBot</span>
                         <span class="bot-tag"><i class="fas fa-check" style="font-size: 7px; margin-right: 2px;"></i> APP</span>
                     </div>
-                    <div id="previewText" class="discord-text"></div>
+                    <div id="previewContentWrapper">
+                        <div id="previewText" class="discord-text"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,8 +195,21 @@
 
         function showPreview() {
             const msg = document.getElementById('message').value;
+            const isEmbed = document.getElementById('enableEmbed').checked;
+            const color = document.getElementById('embedColor').value;
+            const previewText = document.getElementById('previewText');
+            const wrapper = document.getElementById('previewContentWrapper');
+
             if(msg.trim() !== "") {
-                document.getElementById('previewText').innerHTML = parseMarkdown(msg);
+                previewText.innerHTML = parseMarkdown(msg);
+                
+                if(isEmbed) {
+                    wrapper.className = "discord-embed-wrapper";
+                    wrapper.style.borderLeftColor = color;
+                } else {
+                    wrapper.className = "";
+                }
+
                 document.getElementById('previewContainer').style.display = "block";
             }
         }
@@ -164,6 +221,8 @@
         async function sendWebhook() {
             const urlInput = document.getElementById('url').value.trim();
             const messageInput = document.getElementById('message').value.trim();
+            const isEmbed = document.getElementById('enableEmbed').checked;
+            const color = document.getElementById('embedColor').value;
             const statusDiv = document.getElementById('status');
 
             if (!urlInput || !messageInput) {
@@ -174,12 +233,27 @@
 
             statusDiv.innerText = "⏳ Sedang mengirim...";
             statusDiv.style.color = "#c9d1d9";
+
+            // Konversi HEX warna ke Integer untuk Discord API
+            const colorInt = parseInt(color.replace('#', ''), 16);
+
+            let payload = {};
+            if (isEmbed) {
+                payload = {
+                    embeds: [{
+                        description: messageInput,
+                        color: colorInt
+                    }]
+                };
+            } else {
+                payload = { content: messageInput };
+            }
             
             try {
                 const response = await fetch(urlInput, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: messageInput })
+                    body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
